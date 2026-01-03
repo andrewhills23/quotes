@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Quotes Gallery</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -10,6 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;500;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
     
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <style>
         :root {
@@ -18,7 +21,6 @@
             --white: #ffffff;
             --border: #121212;
             --gray: #9ca3af;
-            --red: #ef4444;
         }
 
         body {
@@ -26,29 +28,31 @@
             background-color: var(--paper);
             color: var(--ink);
             margin: 0;
-            padding: 40px 20px;
+            padding: 20px 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            line-height: 1.6;
+            line-height: 1.5;
+            -webkit-text-size-adjust: 100%;
         }
 
         .container {
             max-width: 700px;
             width: 100%;
-            border-top: 4px double var(--ink);
+            border-top: 3px double var(--ink);
             padding-top: 20px;
         }
 
         /* HEADER */
         h1 {
             font-family: 'Playfair Display', serif;
-            font-size: 3.5rem;
+            font-size: 3rem;
             text-align: center;
             margin: 0 0 10px 0;
             font-weight: 900;
-            letter-spacing: -2px;
+            letter-spacing: -1px;
             text-transform: uppercase;
+            line-height: 1.1;
         }
 
         .subhead {
@@ -57,9 +61,9 @@
             font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
             border-bottom: 1px solid var(--ink);
-            padding-bottom: 20px;
+            padding-bottom: 15px;
             font-style: italic;
         }
 
@@ -67,29 +71,26 @@
         .action-bar-top {
             display: flex;
             justify-content: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
         .btn-random-main {
-            padding: 15px 30px;
+            padding: 12px 25px;
             background: var(--ink);
             color: var(--white);
             border: none;
             cursor: pointer;
             font-family: 'Libre Franklin', sans-serif;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            transition: opacity 0.2s ease;
+            width: 100%;
+            max-width: 300px;
         }
 
-        .btn-random-main:hover {
-            opacity: 0.8;
-        }
-
-        /* FILTERS & SEARCH */
-        .search-container { margin-bottom: 20px; }
+        /* SEARCH & FILTERS */
+        .search-container { margin-bottom: 15px; }
         
         #searchInput {
             width: 100%;
@@ -101,135 +102,178 @@
             box-sizing: border-box;
             outline: none;
             border-radius: 0;
+            -webkit-appearance: none;
         }
 
-        .filters { display: flex; gap: 15px; margin-bottom: 40px; flex-wrap: wrap; }
-        
-        .filters select { 
-            font-family: 'Libre Franklin', sans-serif; 
-            font-size: 0.9rem; 
-            flex: 1; 
-            min-width: 150px;
-            padding: 12px;
-            border: 1px solid var(--ink);
-            background: var(--white);
-            border-radius: 0;
-            outline: none;
+        .filters { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 30px; 
+            flex-wrap: wrap; 
         }
+        
+        /* Select2 Customization */
+        .select2-container .select2-selection--single {
+            height: 50px !important;
+            border: 1px solid var(--ink) !important;
+            border-radius: 0 !important;
+            background-color: var(--white) !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            font-family: 'Libre Franklin', sans-serif;
+            font-size: 0.9rem;
+            color: var(--ink) !important;
+            padding-left: 15px !important;
+            line-height: normal !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 48px !important;
+            right: 10px !important;
+        }
+
+        .select2-dropdown {
+            border: 1px solid var(--ink) !important;
+            border-radius: 0 !important;
+            font-family: 'Libre Franklin', sans-serif;
+        }
+
+        .select2-search__field {
+            border: 1px solid #ddd !important;
+            border-radius: 0 !important;
+            padding: 8px !important;
+            font-family: 'Libre Franklin', sans-serif;
+        }
+
+        .select2-results__option--highlighted[aria-selected] {
+            background-color: var(--ink) !important;
+            color: var(--white) !important;
+        }
+
+        .filter-wrapper { flex: 1; min-width: 140px; }
 
         /* QUOTE CARDS (LIST VIEW) */
         .quote-card {
             background: #fff;
-            padding: 30px 25px;
-            margin-bottom: 25px;
+            padding: 25px 20px;
+            margin-bottom: 20px;
             border-bottom: 1px solid #ccc;
             cursor: pointer;
-            transition: background 0.2s;
             position: relative;
         }
-        .quote-card:hover { background-color: #fffef0; }
-
-        /* Delete Button (Hidden Admin Feature) */
-        .delete-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: transparent;
-            border: none;
-            color: #eee; /* Very subtle */
-            font-size: 1.2rem;
-            cursor: pointer;
-            z-index: 5;
-            transition: color 0.2s;
-        }
-        .quote-card:hover .delete-btn { color: #ddd; }
-        .delete-btn:hover { color: var(--red) !important; }
-
+        .quote-card:active { background-color: #f5f5f5; }
+        
         /* Standard Layout */
-        .quote-layout { display: flex; align-items: flex-start; gap: 15px; }
-        .quote-symbol { font-family: 'Playfair Display', serif; font-size: 4rem; line-height: 1; color: var(--ink); opacity: 0.2; flex-shrink: 0; user-select: none; }
-        .quote-text-body { flex-grow: 1; font-size: 1.5rem; font-style: italic; line-height: 1.4; margin-top: 8px; }
-        .quote-meta { font-family: 'Libre Franklin', sans-serif; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; text-align: right; margin-top: 15px; padding-right: 15px; color: #555; }
+        .quote-layout { display: flex; align-items: flex-start; gap: 10px; }
+        .quote-symbol { font-family: 'Playfair Display', serif; font-size: 3rem; line-height: 1; color: var(--ink); opacity: 0.2; flex-shrink: 0; }
+        .quote-text-body { flex-grow: 1; font-size: 1.25rem; font-style: italic; line-height: 1.4; margin-top: 5px; }
+        .quote-meta { font-family: 'Libre Franklin', sans-serif; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-align: right; margin-top: 15px; color: #555; }
 
         /* Conversation Layout */
-        .conversation-stack { display: flex; flex-direction: column; gap: 20px; }
-        .convo-block { border-left: 3px solid var(--ink); padding-left: 15px; }
-        .convo-text { font-size: 1.4rem; font-style: italic; margin-bottom: 5px; display: block; }
-        .convo-meta { font-family: 'Libre Franklin', sans-serif; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--gray); display: block; }
+        .conversation-stack { display: flex; flex-direction: column; gap: 15px; }
+        .convo-block { border-left: 3px solid var(--ink); padding-left: 12px; }
+        .convo-text { font-size: 1.2rem; font-style: italic; margin-bottom: 4px; display: block; line-height: 1.3;}
+        .convo-meta { font-family: 'Libre Franklin', sans-serif; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--gray); display: block; }
 
         /* MODAL (BIG VIEW) */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(255,255,255,0.95);
             display: none; justify-content: center; align-items: center;
             z-index: 1000;
+            padding: 20px;
+            box-sizing: border-box;
         }
         
         .modal-content {
             background: var(--paper);
-            padding: 40px;
-            max-width: 700px;
-            width: 90%;
+            padding: 30px 20px;
+            width: 100%;
+            max-width: 600px;
             position: relative;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
             text-align: center;
             border: 1px solid var(--ink);
-            max-height: 90vh;
+            max-height: 85vh;
             overflow-y: auto;
         }
 
         .close-modal {
-            position: absolute; top: 10px; right: 20px;
-            font-size: 2rem; cursor: pointer; color: var(--gray);
+            position: absolute; top: 5px; right: 15px;
+            font-size: 2.5rem; cursor: pointer; color: var(--ink);
             z-index: 2;
+            line-height: 1;
         }
 
         #captureArea {
             background: var(--paper);
-            padding: 40px;
-            border: 4px double var(--ink);
+            padding: 20px;
+            border: 3px double var(--ink);
             -webkit-font-smoothing: antialiased;
             text-align: center;
         }
 
-        /* Modal Quote - Standard */
-        .modal-quote-layout { display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-bottom: 20px; }
-        .modal-quote-symbol { font-family: 'Playfair Display', serif; font-size: 6rem; line-height: 0.8; color: var(--ink); opacity: 0.2; }
-        .modal-quote-text { font-size: 2.5rem; font-style: italic; line-height: 1.3; }
+        /* Modal Content */
+        .modal-quote-layout { display: flex; justify-content: center; align-items: flex-start; gap: 10px; margin-bottom: 20px; }
+        .modal-quote-symbol { font-size: 4rem; line-height: 0.8; color: var(--ink); opacity: 0.2; }
+        .modal-quote-text { font-size: 1.8rem; font-style: italic; line-height: 1.3; }
 
-        /* Modal Quote - Conversation */
-        .modal-convo-stack { text-align: left; margin-bottom: 30px; }
-        .modal-convo-block { margin-bottom: 25px; padding-left: 20px; border-left: 4px solid var(--ink); }
-        .modal-convo-text { font-size: 2rem; font-style: italic; line-height: 1.3; margin-bottom: 10px; }
+        .modal-convo-stack { text-align: left; margin-bottom: 20px; }
+        .modal-convo-block { margin-bottom: 20px; padding-left: 15px; border-left: 4px solid var(--ink); }
+        .modal-convo-text { font-size: 1.5rem; font-style: italic; line-height: 1.3; margin-bottom: 8px; }
         .modal-convo-meta { font-family: 'Libre Franklin', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 0.9rem; color: #555; }
-
-        .big-quote-meta { font-family: 'Libre Franklin', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 1rem; border-top: 1px solid var(--ink); padding-top: 20px; display: inline-block; }
-
-        .action-bar {
-            margin-top: 30px;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
+        
+        .big-quote-meta { 
+            font-family: 'Libre Franklin', sans-serif; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            font-size: 0.9rem; 
+            border-top: 1px solid var(--ink); 
+            padding-top: 15px; 
+            display: inline-block; 
         }
 
+        .action-bar { margin-top: 25px; }
         .btn-save {
             background-color: var(--ink);
             color: white;
-            padding: 10px 20px;
+            padding: 12px 25px;
             border: none;
             font-family: 'Libre Franklin';
             text-transform: uppercase;
             font-weight: bold;
+            font-size: 0.8rem;
             cursor: pointer;
             letter-spacing: 1px;
+            width: 100%;
+            transition: background 0.3s;
         }
         
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-            font-family: 'Libre Franklin', sans-serif;
-            border: 1px dashed #ccc;
+        /* Mobile specific style for generated image */
+        .generated-img-mobile {
+            width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* MOBILE OPTIMIZATIONS */
+        @media (max-width: 600px) {
+            body { padding: 20px 10px; }
+            h1 { font-size: 2rem; }
+            .subhead { font-size: 0.7rem; margin-bottom: 25px; }
+            .filters { flex-direction: column; gap: 15px; }
+            .filter-wrapper { width: 100%; }
+            .quote-card { padding: 20px 15px; }
+            .quote-text-body { font-size: 1.1rem; }
+            .quote-symbol { font-size: 2.5rem; }
+            .modal-quote-text { font-size: 1.4rem; }
+            .modal-convo-text { font-size: 1.2rem; }
+            .modal-content { padding: 25px 15px; }
         }
     </style>
 </head>
@@ -248,12 +292,16 @@
         </div>
 
         <div class="filters">
-            <select id="filterPerson" onchange="renderQuotes()">
-                <option value="all">Sort by Quoter (All)</option>
-            </select>
-            <select id="filterYear" onchange="renderQuotes()">
-                <option value="all">Sort by Year (All)</option>
-            </select>
+            <div class="filter-wrapper">
+                <select id="filterPerson" style="width: 100%">
+                    <option value="all">Sort by Quoter (All)</option>
+                </select>
+            </div>
+            <div class="filter-wrapper">
+                <select id="filterYear" style="width: 100%">
+                    <option value="all">Sort by Year (All)</option>
+                </select>
+            </div>
         </div>
 
         <div id="quotesList"></div>
@@ -262,19 +310,15 @@
     <div id="quoteModal" class="modal-overlay" onclick="closeModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <span class="close-modal" onclick="closeModalDirect()">×</span>
-            
-            <div id="captureArea">
-                </div>
-
+            <div id="captureArea"></div>
             <div class="action-bar">
-                <button class="btn-save" onclick="saveAsImage()">Save as Image</button>
+                <button id="saveBtn" class="btn-save" onclick="saveAsImage()">Save as Image</button>
             </div>
         </div>
     </div>
 
     <script>
         // 1. INITIAL DATA
-        // This list is the source of truth for the GitHub page.
         const rawInitialQuotes = [
             // 2020
             { text: "Pew pew", person: "Andrew's Friend", date: "2020-01-01" },
@@ -651,7 +695,7 @@
             { text: "“Which do you choose, death or kisses?” — Raya. “I choose death,” — Waid", person: "Raya & Waid", date: "2025-05-12" },
             { text: "Jesus was a troubled woman", person: "Maxine", date: "2025-05-13" },
             { text: "Please stop sexualizing the monarchy, they are all inbred", person: "Maxine", date: "2025-05-14" },
-            
+
         ];
 
         // Process legacy quotes to mark them as Year-Only mode
@@ -663,27 +707,46 @@
         // We append any locally saved quotes on top (optional for your own view)
         const localData = JSON.parse(localStorage.getItem('quotesDB_data'));
         if(localData && localData.length > 0) {
-            // This is just to allow you to test deletions locally if needed
-            // For a static site, usually you just render the hardcoded list.
-            // But since you asked for Admin delete, we use the local copy if it exists/matches
-            // For simplicity in this file-based deploy, we will prioritize the code list + localStorage edits
-            // If you delete something via admin, it saves to local storage as the "new" list.
+            // For this final version, since we removed delete, we primarily trust the hardcoded list for structure,
+            // but if you have local edits you want to keep visible to yourself, we use localData.
             quotes = localData;
         }
 
         // 3. DOM ELEMENTS
         const quotesList = document.getElementById('quotesList');
-        const filterPerson = document.getElementById('filterPerson');
-        const filterYear = document.getElementById('filterYear'); 
+        const filterPerson = $('#filterPerson'); 
+        const filterYear = $('#filterYear');     
         const searchInput = document.getElementById('searchInput');
         const quoteModal = document.getElementById('quoteModal');
         const captureArea = document.getElementById('captureArea');
+        const saveBtn = document.getElementById('saveBtn');
 
         // 4. INITIALIZATION
-        function init() {
-            updateFilters(); 
+        $(document).ready(function() {
+            updateFilters();
+            
+            // Initialize Select2 with custom open handler to set placeholder
+            $('#filterPerson').select2({
+                placeholder: "Filter by Quoter",
+                width: '100%',
+                dropdownAutoWidth: true
+            }).on('select2:open', function(e) {
+                // Set custom placeholder for the search input inside the dropdown
+                document.querySelector('.select2-search__field').placeholder = 'Search for a quoter...';
+            });
+            
+            $('#filterYear').select2({
+                placeholder: "Filter by Year",
+                width: '100%',
+                dropdownAutoWidth: true,
+                minimumResultsForSearch: Infinity 
+            });
+
+            $('#filterPerson').on('change', renderQuotes);
+            $('#filterYear').on('change', renderQuotes);
+
             renderQuotes();
-        }
+        });
 
         // 5. HELPER FUNCTIONS
         function saveData() {
@@ -738,25 +801,8 @@
             const randomIndex = Math.floor(Math.random() * quotes.length);
             openModal(randomIndex);
         }
-        
-        function deleteQuote(index) {
-            const pwd = prompt("Enter Admin Password to delete:");
-            if (pwd === "admin") {
-                if (confirm("Are you sure? Note: If this is a hardcoded quote, you must also remove it from the code file to delete it for everyone.")) {
-                    // Find the quote in the main array using the passed index
-                    // Note: The index passed is the original index
-                    quotes.splice(index, 1);
-                    saveData();
-                    updateFilters();
-                    renderQuotes();
-                }
-            } else if (pwd !== null) {
-                alert("Incorrect password.");
-            }
-        }
 
         function updateFilters() {
-            // Update Filter Dropdown
             const peopleSet = new Set();
             quotes.forEach(q => {
                 const names = q.person.split(/\s*&\s*|\s+and\s+/);
@@ -766,15 +812,20 @@
             });
             const sortedPeople = Array.from(peopleSet).sort();
             
-            // Update Year Filter
             const years = new Set(quotes.map(q => getYearFromDate(q.date)));
             const sortedYears = Array.from(years).sort().reverse();
 
-            filterPerson.innerHTML = `<option value="all">Sort by Quoter (All)</option>` + 
-                                     sortedPeople.map(p => `<option value="${p}">${p}</option>`).join('');
+            let personHtml = `<option value="all">Sort by Quoter (All)</option>`;
+            sortedPeople.forEach(p => {
+                personHtml += `<option value="${p}">${p}</option>`;
+            });
+            $('#filterPerson').html(personHtml);
             
-            filterYear.innerHTML = `<option value="all">Sort by Year (All)</option>` + 
-                                   sortedYears.map(y => `<option value="${y}">${y}</option>`).join('');
+            let yearHtml = `<option value="all">Sort by Year (All)</option>`;
+            sortedYears.forEach(y => {
+                yearHtml += `<option value="${y}">${y}</option>`;
+            });
+            $('#filterYear').html(yearHtml);
         }
 
         // 6. MODAL & SCREENSHOT
@@ -810,6 +861,12 @@
             }
 
             captureArea.innerHTML = html;
+            
+            // Reset button state
+            saveBtn.innerText = "Save as Image";
+            saveBtn.disabled = false;
+            saveBtn.style.opacity = "1";
+            
             quoteModal.style.display = 'flex';
         }
 
@@ -831,12 +888,35 @@
                     clonedCapture.style.fontSmooth = 'always';
                 }
             }).then(canvas => {
-                const link = document.createElement('a');
-                const date = new Date();
-                const timestamp = `${date.getFullYear()}${date.getMonth()+1}${date.getDate()}-${date.getHours()}${date.getMinutes()}${date.getSeconds()}`;
-                link.download = `quote-${timestamp}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+                const imgData = canvas.toDataURL('image/png');
+                
+                // Check if Mobile (iOS/Android)
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+                if (isMobile) {
+                    // Mobile Flow: Display Image for Long-Press
+                    const img = new Image();
+                    img.src = imgData;
+                    img.className = 'generated-img-mobile'; // Use CSS class for style
+                    
+                    // Replace content with image
+                    captureArea.innerHTML = '';
+                    captureArea.appendChild(img);
+                    
+                    // Update Button Text
+                    saveBtn.innerText = "Tap & Hold Image to Save to Photos";
+                    saveBtn.disabled = true;
+                    saveBtn.style.opacity = "0.7";
+                    
+                } else {
+                    // Desktop Flow: Auto-download
+                    const link = document.createElement('a');
+                    const date = new Date();
+                    const timestamp = `${date.getFullYear()}${date.getMonth()+1}${date.getDate()}-${date.getHours()}${date.getMinutes()}${date.getSeconds()}`;
+                    link.download = `quote-${timestamp}.png`;
+                    link.href = imgData;
+                    link.click();
+                }
             });
         }
 
@@ -844,11 +924,11 @@
         function renderQuotes() {
             quotesList.innerHTML = '';
             
-            const personChoice = filterPerson.value;
-            const yearChoice = filterYear.value;
+            // Get values from Select2 (jQuery syntax)
+            const personChoice = $('#filterPerson').val();
+            const yearChoice = $('#filterYear').val();
             const searchTerm = searchInput.value.toLowerCase();
 
-            // Map quotes to preserve original index for deletion/modal
             let displayQuotes = quotes.map((q, index) => ({...q, originalIndex: index})).filter(q => {
                 
                 // Search Logic
@@ -882,17 +962,6 @@
                 const card = document.createElement('div');
                 card.className = 'quote-card';
                 card.setAttribute('onclick', `openModal(${q.originalIndex})`);
-
-                // DELETE BUTTON (Hidden unless hovered)
-                const delBtn = document.createElement('button');
-                delBtn.innerHTML = '×';
-                delBtn.className = 'delete-btn';
-                delBtn.title = "Admin Delete";
-                delBtn.onclick = (e) => {
-                    e.stopPropagation(); 
-                    deleteQuote(q.originalIndex);
-                };
-                card.appendChild(delBtn);
 
                 const isConvo = isConversation(q.text);
                 
@@ -932,8 +1001,6 @@
                 quotesList.appendChild(card);
             });
         }
-
-        init();
     </script>
 </body>
 </html>
