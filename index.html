@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Quotes Gallery</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;500;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+    
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --ink: #121212;
+            --paper: #f9f7f1;
+            --white: #ffffff;
+            --border: #121212;
+            --gray: #9ca3af;
+            --red: #ef4444;
+        }
+
+        body {
+            font-family: 'Playfair Display', serif;
+            background-color: var(--paper);
+            color: var(--ink);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 700px;
+            width: 100%;
+            border-top: 4px double var(--ink);
+            padding-top: 20px;
+        }
+
+        /* HEADER */
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            text-align: center;
+            margin: 0 0 10px 0;
+            font-weight: 900;
+            letter-spacing: -2px;
+            text-transform: uppercase;
+        }
+
+        .subhead {
+            text-align: center;
+            font-family: 'Libre Franklin', sans-serif;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--ink);
+            padding-bottom: 20px;
+            font-style: italic;
+        }
+
+        /* TOP ACTIONS */
+        .action-bar-top {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .btn-random-main {
+            padding: 15px 30px;
+            background: var(--ink);
+            color: var(--white);
+            border: none;
+            cursor: pointer;
+            font-family: 'Libre Franklin', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: opacity 0.2s ease;
+        }
+
+        .btn-random-main:hover {
+            opacity: 0.8;
+        }
+
+        /* FILTERS & SEARCH */
+        .search-container { margin-bottom: 20px; }
+        
+        #searchInput {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid var(--ink);
+            background: var(--white);
+            font-family: 'Libre Franklin', sans-serif;
+            font-size: 1rem;
+            box-sizing: border-box;
+            outline: none;
+            border-radius: 0;
+        }
+
+        .filters { display: flex; gap: 15px; margin-bottom: 40px; flex-wrap: wrap; }
+        
+        .filters select { 
+            font-family: 'Libre Franklin', sans-serif; 
+            font-size: 0.9rem; 
+            flex: 1; 
+            min-width: 150px;
+            padding: 12px;
+            border: 1px solid var(--ink);
+            background: var(--white);
+            border-radius: 0;
+            outline: none;
+        }
+
+        /* QUOTE CARDS (LIST VIEW) */
+        .quote-card {
+            background: #fff;
+            padding: 30px 25px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #ccc;
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+        }
+        .quote-card:hover { background-color: #fffef0; }
+
+        /* Delete Button (Hidden Admin Feature) */
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: none;
+            color: #eee; /* Very subtle */
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 5;
+            transition: color 0.2s;
+        }
+        .quote-card:hover .delete-btn { color: #ddd; }
+        .delete-btn:hover { color: var(--red) !important; }
+
+        /* Standard Layout */
+        .quote-layout { display: flex; align-items: flex-start; gap: 15px; }
+        .quote-symbol { font-family: 'Playfair Display', serif; font-size: 4rem; line-height: 1; color: var(--ink); opacity: 0.2; flex-shrink: 0; user-select: none; }
+        .quote-text-body { flex-grow: 1; font-size: 1.5rem; font-style: italic; line-height: 1.4; margin-top: 8px; }
+        .quote-meta { font-family: 'Libre Franklin', sans-serif; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; text-align: right; margin-top: 15px; padding-right: 15px; color: #555; }
+
+        /* Conversation Layout */
+        .conversation-stack { display: flex; flex-direction: column; gap: 20px; }
+        .convo-block { border-left: 3px solid var(--ink); padding-left: 15px; }
+        .convo-text { font-size: 1.4rem; font-style: italic; margin-bottom: 5px; display: block; }
+        .convo-meta { font-family: 'Libre Franklin', sans-serif; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--gray); display: block; }
+
+        /* MODAL (BIG VIEW) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: var(--paper);
+            padding: 40px;
+            max-width: 700px;
+            width: 90%;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            text-align: center;
+            border: 1px solid var(--ink);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .close-modal {
+            position: absolute; top: 10px; right: 20px;
+            font-size: 2rem; cursor: pointer; color: var(--gray);
+            z-index: 2;
+        }
+
+        #captureArea {
+            background: var(--paper);
+            padding: 40px;
+            border: 4px double var(--ink);
+            -webkit-font-smoothing: antialiased;
+            text-align: center;
+        }
+
+        /* Modal Quote - Standard */
+        .modal-quote-layout { display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-bottom: 20px; }
+        .modal-quote-symbol { font-family: 'Playfair Display', serif; font-size: 6rem; line-height: 0.8; color: var(--ink); opacity: 0.2; }
+        .modal-quote-text { font-size: 2.5rem; font-style: italic; line-height: 1.3; }
+
+        /* Modal Quote - Conversation */
+        .modal-convo-stack { text-align: left; margin-bottom: 30px; }
+        .modal-convo-block { margin-bottom: 25px; padding-left: 20px; border-left: 4px solid var(--ink); }
+        .modal-convo-text { font-size: 2rem; font-style: italic; line-height: 1.3; margin-bottom: 10px; }
+        .modal-convo-meta { font-family: 'Libre Franklin', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 0.9rem; color: #555; }
+
+        .big-quote-meta { font-family: 'Libre Franklin', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 1rem; border-top: 1px solid var(--ink); padding-top: 20px; display: inline-block; }
+
+        .action-bar {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-save {
+            background-color: var(--ink);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            font-family: 'Libre Franklin';
+            text-transform: uppercase;
+            font-weight: bold;
+            cursor: pointer;
+            letter-spacing: 1px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-family: 'Libre Franklin', sans-serif;
+            border: 1px dashed #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>The Quotes Gallery</h1>
+        <div class="subhead">A collection of things we have said, usually out of context ;)</div>
+
+        <div class="action-bar-top">
+            <button class="btn-random-main" onclick="showRandomQuote()">Get a Random Quote</button>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search for a quote..." oninput="renderQuotes()">
+        </div>
+
+        <div class="filters">
+            <select id="filterPerson" onchange="renderQuotes()">
+                <option value="all">Sort by Quoter (All)</option>
+            </select>
+            <select id="filterYear" onchange="renderQuotes()">
+                <option value="all">Sort by Year (All)</option>
+            </select>
+        </div>
+
+        <div id="quotesList"></div>
+    </div>
+
+    <div id="quoteModal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-modal" onclick="closeModalDirect()">×</span>
+            
+            <div id="captureArea">
+                </div>
+
+            <div class="action-bar">
+                <button class="btn-save" onclick="saveAsImage()">Save as Image</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. INITIAL DATA
+        // This list is the source of truth for the GitHub page.
+        const rawInitialQuotes = [
+            // 2020
+            { text: "Pew pew", person: "Andrew's Friend", date: "2020-01-01" },
+            { text: "CHINESE Emily!", person: "Andrew's Friend", date: "2020-01-02" },
+            { text: "MMMMMhm.", person: "Andrew's Friend", date: "2020-01-03" },
+            { text: "It is not working! Is it cuz i blocked you cuz I don’t know how to fix it…", person: "Andrew's Friend", date: "2020-01-04" },
+            { text: "NeverMINDDDDDD… 🙄", person: "Andrew's Friend", date: "2020-01-05" },
+            { text: "AX-Actly! You always play with girls! Not boys!", person: "Andrew's Friend", date: "2020-01-06" },
+            // 2021
+            { text: "You're the funniest girl I know!", person: "Daython", date: "2021-01-01" },
+            // 2022
+            { text: "It’s so echoey in here!", person: "Ms. Jolic", date: "2022-01-01" },
+            { text: "If you get hit by a car at 3:12, I lose my job, I lose my house", person: "Ms. Jolic", date: "2022-01-02" },
+            { text: "Dried up cum-stain", person: "Salma", date: "2022-01-03" },
+            { text: "Andrew and Thing", person: "Ms. Jolic", date: "2022-01-04" },
+            { text: "Andrew, Minus One", person: "Ms. Jolic", date: "2022-01-05" },
+            // 2023
+            { text: "That was hot", person: "Cydney", date: "2023-01-01" },
+            { text: "SaLsA!", person: "Ms. Jolic", date: "2023-01-02" },
+            { text: "Mr. Thing", person: "Ms. Jolic", date: "2023-01-03" },
+            { text: "I’m gonna dug a grave", person: "Ash", date: "2023-01-04" },
+            { text: "You may know her physically, but I’m there mentally", person: "Ash", date: "2023-01-05" },
+            { text: "What kind of Asian are you?", person: "Cydney", date: "2023-01-06" },
+            { text: "Mama, I need your email, mama!", person: "Stephanie", date: "2023-01-07" },
+            { text: "We’re here, we’re queer, and we’re in your school!", person: "Poster From The High School", date: "2023-01-08" },
+            { text: "I was in a state of shock because the headphones got stuck in my hair, and then baby gwirwl was gone.", person: "Salma", date: "2023-01-09" },
+            { text: "Cancel Andrew, he’s a misogynistic woman beater!!!!!", person: "Cydney", date: "2023-01-10" },
+            { text: "I feel like he [Andrew] fills his water guns with his cats piss", person: "Cydney", date: "2023-01-11" },
+            { text: "I wanna lick some ass", person: "Stephanie", date: "2023-01-12" },
+            { text: "I'm at cock sucking level", person: "Stephanie", date: "2023-01-13" },
+            { text: "Addiction is good when it’s with pretzels", person: "Andrew", date: "2023-01-14" },
+            { text: "Uwu, I’m a butterfly!", person: "Andrew", date: "2023-01-15" },
+            { text: "I would rather sit on Andrew’s lap than Cydney’s because Andrew is gay", person: "Stephanie", date: "2023-01-16" },
+            { text: "It can be big, it can be small or it can be chinese! (talking about eyes)", person: "Cydney", date: "2023-01-17" },
+            { text: "I wonder if I can make her flat.", person: "Cydney", date: "2023-01-18" },
+            { text: "Is that your first time being molested?", person: "Cydney", date: "2023-01-19" },
+            { text: "I’m going to make her titless", person: "Cydney", date: "2023-01-20" },
+            { text: "I’ve never heard of someone who likes to cum in their cereal and then eat it", person: "Stephanie", date: "2023-01-21" },
+            { text: "You got the noodles", person: "Cydney", date: "2023-01-22" },
+            { text: "MINE. 🔪", person: "Ash (Ex)", date: "2023-01-23" },
+            { text: " #cancelandrew ", person: "Cydney", date: "2023-01-24" },
+            { text: "Daddy likes naughty girls, yeah I love it when you’re naughty", person: "Albert (Theclownowner1)", date: "2023-01-25" },
+            { text: "Hadtdtdtdtdtdtdtdtdttdtdtd", person: "Andrew", date: "2023-01-26" },
+            { text: "Cydney impregnated my arm", person: "Andrew", date: "2023-01-27" },
+            { text: "OFF YOUR PHONES!!", person: "Ms. Jolic", date: "2023-01-28" },
+            { text: "I’m gonna be locking the classroom door when we leave", person: "Ms. Jolic", date: "2023-01-29" },
+            { text: "He’s sleeping and growing!", person: "Ms. Jolic", date: "2023-01-30" },
+            { text: "I can make you cum", person: "Laura", date: "2023-02-01" },
+            { text: "Are they hurting you Andrew?", person: "Ms. Jolic", date: "2023-02-02" },
+            { text: "It’s because you’re playing video games, ALL OF YOU ARE PLAYING VIDEO GAMES!", person: "Ms. Jolic", date: "2023-02-03" },
+            { text: "*Whispering* It’s make up time..!", person: "Cydney", date: "2023-02-04" },
+            { text: "WHERE ARE MY PILLS?!", person: "Cydney's Grandma", date: "2023-02-05" },
+            { text: "I accidentally put DETERGENT in my medicine!", person: "Cydney's Grandma", date: "2023-02-06" },
+            { text: "After everything, you let them hear what happened! Now your friends are making fun of me", person: "Cydney's Grandma", date: "2023-02-07" },
+            { text: "I almost got hit by a car because I was playing the Ice Spice obby", person: "Cydney", date: "2023-02-08" },
+            { text: "I have to go sleepy bye bye!", person: "Andrew", date: "2023-02-09" },
+            { text: "Stephanie look! It’s peeing.", person: "Cydney", date: "2023-02-10" },
+            { text: "I like fingering Salma’s hair", person: "Cydney", date: "2023-02-11" },
+            { text: "What if i’m the one with the gun…", person: "Cydney", date: "2023-02-12" },
+            { text: "“I can be your heating supply.” — Stephanie. “That sounds so wrong, but so right at the same time.” — Andrew", person: "Stephanie & Andrew", date: "2023-02-13" },
+            { text: "“Did they restock?” *gasps* “The restocked BIIIIIIIIG time.”", person: "Cydney", date: "2023-02-14" },
+            { text: "I gave up, because that’s what you do when life gets hard", person: "Andrew", date: "2023-02-15" },
+            { text: "Its nice to see you talking. You know you don't have to be afraid to talk, you can talk to me anytime you want.", person: "Georgia (The annoying girl)", date: "2023-02-16" },
+            { text: "“Im such a child.” — Stephanie. “Im such a sadist.” — Salma", person: "Stephanie & Salma", date: "2023-02-17" },
+            { text: "I drew butterflies during the war", person: "Stephanie", date: "2023-02-18" },
+            { text: "I found half of their name and ate it", person: "Andrew", date: "2023-02-19" },
+            { text: "Okay, let’s search for a supportive boyfriend", person: "Andrew", date: "2023-02-20" },
+            { text: "I’m a fatass too!", person: "Cydney", date: "2023-02-21" },
+            { text: "When I get home i'm going to search “why is watermelon racist?”", person: "Andrew", date: "2023-02-22" },
+            { text: "“How do elephants have sex?” — Andrew. “Ants probably ask the same thing about us.” — Salma", person: "Andrew & Salma", date: "2023-02-23" },
+            { text: "My thigh is so big it worked as a landing pad", person: "Salma", date: "2023-02-24" },
+            { text: "When you have sex with someone, you have sex with all their past.", person: "Ms. Jolic", date: "2023-02-25" },
+            { text: "It doesn’t need to be straight, it’s pride month nothing has to be straight", person: "Stephanie", date: "2023-02-26" },
+            { text: "Why are we talking about Zoro’s pubes?", person: "Cydney", date: "2023-02-27" },
+            { text: "Did you see Kevin slap David’s ass?", person: "Andrew", date: "2023-02-28" },
+            { text: "When I joined the call all I saw was a giant co*k in my face", person: "Stephanie", date: "2023-03-01" },
+            { text: "The holy nipple", person: "Stephanie", date: "2023-03-02" },
+            { text: "The bike rails are wet, wet for you", person: "Stephanie", date: "2023-03-03" },
+            { text: "AHHHH CO*K", person: "Stephanie", date: "2023-03-04" },
+            { text: "Tiana, my white ipad charge cord", person: "Ms. Jolic", date: "2023-03-05" },
+            { text: "ANIMAL, I open the door for me not you!", person: "Guy who opened the door", date: "2023-03-06" },
+            { text: "Im a UWU girl.", person: "Andrew", date: "2023-03-07" },
+            { text: "He [Andrew] would make a good femboy.", person: "Cydney", date: "2023-03-08" },
+            { text: "Let me help you put on your dress", person: "Andrew (as Mr. Walkington)", date: "2023-03-09" },
+            { text: "I wonder how big of a cock I can fit in my mouth!", person: "Cydney", date: "2023-03-10" },
+            { text: "WOMAN WOMAN", person: "Andrew", date: "2023-03-11" },
+            { text: "“We should make the shitty ex boyfriend” — Stephanie. “YEAH AND STAB THE HOLE THROUGH HIM” — Andrew", person: "Stephanie & Andrew", date: "2023-03-12" },
+            { text: "We didn’t invite them to our wedding!", person: "Stephanie", date: "2023-03-13" },
+            { text: "Marcel, 20 bucks if you send me a picture with your shirt off", person: "Mr. Max", date: "2023-03-14" },
+            { text: "I going to come down harder and faster than you've ever seen me come down on someone before", person: "Mr. Max", date: "2023-03-15" },
+            { text: "This is my classroom, I put anything I want in my mouth", person: "Mr. Max", date: "2023-03-16" },
+            { text: "Salma, grow up", person: "Ms. Jolic", date: "2023-03-17" },
+            { text: "Daython, office, now.", person: "Mr. Max", date: "2023-03-18" },
+            { text: "“Ms. Jolic, my [xylophone] sticks are different!” “That’s life kid,”", person: "Ms. Jolic", date: "2023-03-19" },
+            // 2024
+            { text: "What are you even doing in a shower for an hour- don’t answer that- sorry boys!", person: "Mr. Max", date: "2024-01-01" },
+            { text: "You lot are so annoying", person: "Mr. Max", date: "2024-01-02" },
+            { text: "I’m 99% teddy bear and 1% total nightmare", person: "Mr. Max", date: "2024-01-03" },
+            { text: "Excuse me, Excusez-moi", person: "Wallot (Vacuum Cleaner)", date: "2024-01-04" },
+            { text: "I was worried you were going to get undressed in my classroom", person: "Ms. Street", date: "2024-01-05" },
+            { text: "You thought I was feeling you? Thats cuz I am (to Stephanie)", person: "Andrew", date: "2024-01-06" },
+            { text: "Freetime means sleep time", person: "Salma", date: "2024-01-07" },
+            { text: "No matter what there will always be a guy bigger and harder than you", person: "Mr. Max", date: "2024-01-08" },
+            { text: "I have cum all over my fingers", person: "Stephanie", date: "2024-01-09" },
+            { text: "No matter what, we will find you and we will point a little flashlight at you, and it will be embarrassing", person: "Lady at Young People's Theatre", date: "2024-01-10" },
+            { text: "Have a smoke, have a drink, HAVE SEX WITH ME.", person: "Mr. Max", date: "2024-01-11" },
+            { text: "Jump off a cliff for TikTok, jump into an unknown body of water for TikTok", person: "Mr. Max", date: "2024-01-12" },
+            { text: "Do not do not do not do not do not do not ever ever ever ever ever ever ever… EVER send nekkid pictures of yourself online", person: "Mr. Max", date: "2024-01-13" },
+            { text: "Rahhhh… get me some more of that sweet sweet crack", person: "Mr. Max", date: "2024-01-14" },
+            { text: "We all squirt!", person: "Zaniyah", date: "2024-01-15" },
+            { text: "Um why are you touching him down there", person: "Mr. Max", date: "2024-01-16" },
+            { text: "You can killed or kidnapped there", person: "Ms. Jolic", date: "2024-01-17" },
+            { text: "I was dying, I thought that was it", person: "Ms. Jolic", date: "2024-01-18" },
+            { text: "But I am definitely going to be squeezing you harder and harder as the year goes on", person: "Mr. Max", date: "2024-01-19" },
+            { text: "Stephanie! I can see your face! It’s beautiful!", person: "Mr. Max", date: "2024-01-20" },
+            { text: "First of all, I have no gyatt", person: "Mr. Max", date: "2024-01-21" },
+            { text: "Hoe? That dirty hoe!", person: "Mr. Max", date: "2024-01-22" },
+            { text: "When you use a cup from another restaurant in our restaurant, that is stealing. Don't do it again or else you will be banned", person: "Lady at McDonald's", date: "2024-01-23" },
+            { text: "I need a racoon shoved up my ass right now", person: "Stephanie", date: "2024-01-24" },
+            { text: "I need 2.5 raccoons right now for reasons not related to my asshole. I wonder if Dua Lipa has ever thought about that.", person: "Salma", date: "2024-01-25" },
+            { text: "I wanna breastfeed Joe Biden", person: "Salma", date: "2024-01-26" },
+            { text: "I want a man who can manipulate me, whos a narcissist and will fuck me good", person: "Stephanie", date: "2024-01-27" },
+            { text: "If you need someone to be hard on you, I will be hard on you", person: "Mr. Max", date: "2024-01-28" },
+            { text: "“Everything you do is a practice test, David.” ... “David can you STOP”", person: "Ms. K", date: "2024-01-29" },
+            { text: "“Mountain?” — Stephanie. “Mountain.” — Andrew", person: "Stephanie & Andrew", date: "2024-01-30" },
+            { text: "“Do you wanna touch eyeballs?” — Stephanie. “Why would you ask that? Yes, of course I do! Let’s touch eyeballs right now!” — Salma", person: "Stephanie & Salma", date: "2024-01-31" },
+            { text: "I can go home and smoke as much weed as I want", person: "Mr. Max", date: "2024-02-01" },
+            { text: "I need a calendar- oh that’s a calculator", person: "Stephanie", date: "2024-02-02" },
+            { text: "My asshole is like a black hole! It sucks everything!", person: "Stephanie", date: "2024-02-03" },
+            { text: "If you’re ever planning to commit a crime, wear gloves and a mask, don’t leave anything behind", person: "Ms. K", date: "2024-02-04" },
+            { text: "I said EATING. COMMA. WATER.", person: "Luke", date: "2024-02-05" },
+            { text: "Oh, faggots!", person: "Mr. Max", date: "2024-02-06" },
+            { text: "I’m gonna get high off this [Spray Paint]", person: "Peggy", date: "2024-02-07" },
+            { text: "Stop playing in the toilet with the turdies!", person: "Mr. Max", date: "2024-02-08" },
+            { text: "Shut your gyatt", person: "Mr. Max", date: "2024-02-09" },
+            { text: "I’m so skibidi", person: "Mr. Max", date: "2024-02-10" },
+            { text: "I like girls", person: "Mr. Max", date: "2024-02-11" },
+            { text: "“Are you going to hit us with your breasts or knuckles?” — Maria. “Yeah I'm going to hit you with my breasts!” — Stephanie. “Excuse me, you should only be hitting me,” — Andrew. “With my breasts or knuckles-” — Stephanie. “YES.” — Andrew", person: "The Gang (Steph, Andrew, Maria)", date: "2024-02-12" },
+            { text: "Andrew got bit by a dog and salma ran him over with a steam roller", person: "Zaniyah & Salma", date: "2024-02-13" },
+            { text: "I’ve never seen a woman piss that fast", person: "Andrew", date: "2024-02-14" },
+            { text: "Because next week… It starts. THE SEX FORM", person: "Mr. Max", date: "2024-02-15" },
+            { text: "321 GO!", person: "The Whole Class", date: "2024-02-16" },
+            { text: "“Are the Heartstopper books any good?” — Mr. Hanning. “Yes but they’re very gay,” — Zaniyah. “Well of course they are, have you seen them?” — Mr. Hanning", person: "Mr. Hanning & Zaniyah", date: "2024-02-17" },
+            { text: "“I just remembered… my birthday.” — Zaniyah. “It’s in like four months, I can’t” — Maria", person: "Zaniyah & Maria", date: "2024-02-18" },
+            { text: "“YOU CAN’T WHAT?” — Zaniyah. “I just pictured myself rolling down a hill and at the bottom is Owais,” — Zaniyah. “Okay stop it I need to read,” — Zaniyah. “READ?” — Andrew. “I LOOK AT THE PICTURES,” — Zaniyah", person: "Zaniyah & Andrew", date: "2024-02-19" },
+            { text: "I wanna drove a car off the roof, you know the one from mickey mouse?", person: "Zaniyah", date: "2024-02-20" },
+            { text: "Butt naked, three spikes of hair", person: "Zaniyah", date: "2024-02-21" },
+            { text: "I’m going to molest a child", person: "Taima/Temu", date: "2024-02-22" },
+            { text: "Thick like Mr. Max", person: "The Boys", date: "2024-02-23" },
+            { text: "Because today is ORAL PRACTICE", person: "Ms. Street", date: "2024-02-24" },
+            { text: "Whales are not fish-", person: "Ms. Street", date: "2024-02-25" },
+            { text: "“Why is there so much talking-” — Ms. Street. “woomp womp” — Marcel", person: "Ms. Street & Marcel", date: "2024-02-26" },
+            { text: "Why did my grandma send me an instagram reel?", person: "Andrew", date: "2024-02-27" },
+            { text: "OPEN, CLOSED, OPEN, CLOSED, OPEN, CLOSED", person: "The Whole Class", date: "2024-02-28" },
+            { text: "Why is my ass smaller than hers", person: "Mr. Max", date: "2024-02-29" },
+            { text: "You wanna have sex ALL THE TIME! [Giant bang because bowling ball fell off his chair]", person: "Mr. Max", date: "2024-03-01" },
+            { text: "After the initial hornyness is over, you are in a relationship", person: "Mr. Max", date: "2024-03-02" },
+            { text: "Not for me! Hahaha! I’m gonna be horny till I die!", person: "Mr. Max", date: "2024-03-03" },
+            { text: "You’re going to feel very horny-less", person: "Mr. Max", date: "2024-03-04" },
+            { text: "You will be thinking about… OTHER THINGS…", person: "Mr. Max", date: "2024-03-05" },
+            { text: "When you get to high school… listen to me, put a leash on that thing!", person: "Mr. Max", date: "2024-03-06" },
+            { text: "Good lord, I’m in pain this morning (because his cat shredded him)", person: "Mr. Max", date: "2024-03-07" },
+            { text: "Third floor. Access. GRANTED", person: "NPC Girl (Kensington Market)", date: "2024-03-08" },
+            { text: "I’m so sleeper deprised", person: "Stephanie", date: "2024-03-09" },
+            { text: "Who made the residential schools! :D", person: "Ms. Jolic", date: "2024-03-10" },
+            { text: "MARIA CHILDBLOCKED ME", person: "Stephanie", date: "2024-03-11" },
+            { text: "My husband died three days ago, I need a new one. Let me flash my ankles real quick", person: "Stephanie", date: "2024-03-12" },
+            { text: "Mary kiss kill: Stephanie, Stephanie and Stephanie. Marry Stephanie, marry Stephanie and fuck Stephanie", person: "Andrew", date: "2024-03-13" },
+            { text: "Oh… stop trying to distract me, THINK OF NICK NELSON MAN TITS, OHHH THE VOICES", person: "Stephanie", date: "2024-03-14" },
+            { text: "Holy shit you’re tall", person: "Ms. Jolic", date: "2024-03-15" },
+            { text: "Someone shared it on the snap- web- you know, you guys", person: "Ms. Jolic", date: "2024-03-16" },
+            { text: "You just gotta stop touching him!", person: "Mr. Hanning", date: "2024-03-17" },
+            { text: "Exclude everybody, not just the black people", person: "Maria (as Blonde Bob Lady)", date: "2024-03-18" },
+            { text: "Bestiality to lovers *maria dies*", person: "Stephanie", date: "2024-03-19" },
+            { text: "Siblings to lovers", person: "Taima/Temu", date: "2024-03-20" },
+            { text: "Not with that ass", person: "Andrew & Maria", date: "2024-03-21" },
+            { text: "I screw, I nut, I bolt", person: "Taima/Temu", date: "2024-03-22" },
+            { text: "Now you have a big new chesticle [Chest tesicle]", person: "Maria", date: "2024-03-23" },
+            { text: "Give me a gummy bear right now or I’m going to send bad men to touch your chesticles", person: "Maria", date: "2024-03-24" },
+            { text: "*max grunts* HUUHHHHHHH", person: "Mr. Max", date: "2024-03-25" },
+            { text: "You are going to be in a relationship with somebody, and that person is going to HIT YOU.", person: "Mr. Max", date: "2024-03-26" },
+            { text: "Ooh! I don't want people to know *giggles*", person: "Mr. Max", date: "2024-03-27" },
+            { text: "If somebody wants to talk with you and they’re like, “Nah, I’d rather just go *click**wink* on the sofa”", person: "Mr. Max", date: "2024-03-28" },
+            { text: "You’re STUPID. You’re UGLY. Nobody else wants to go out with you. I can’t believe I went out with you", person: "Mr. Max", date: "2024-03-29" },
+            { text: "Ooh yay, it’s so long!", person: "Mr. Max", date: "2024-03-30" },
+            { text: "Some of you are fiddling around the edges", person: "Mr. Max", date: "2024-04-01" },
+            { text: "They’re popping out babies like crazy", person: "Stephanie", date: "2024-04-02" },
+            { text: "If you need someone to be hard on you I’ll be hard on you", person: "Mr. Max", date: "2024-04-03" },
+            { text: "Raffi, are we in an abusive relationship?", person: "Mr. Max", date: "2024-04-04" },
+            { text: "But I can't control my pants when I'm around children, ITS A WHOLE DIFFERENT ENTITY", person: "Salma", date: "2024-04-05" },
+            { text: "Bro have you seen ms zurbas toes? They're so cute!", person: "Zaniyah", date: "2024-04-06" },
+            { text: "ANDREWWW STOP DOING BLACK TOE!", person: "Maria", date: "2024-04-07" },
+            { text: "HELP! HE’S TOUCHING ME! SSTOP TOUCHING MEEE DAYTHONNNNN 👹", person: "Fateh", date: "2024-04-08" },
+            { text: "Stop poking my donut!", person: "Mr. Max", date: "2024-04-09" },
+            { text: "Cheerios grow on bushes", person: "Mr. Max", date: "2024-04-10" },
+            { text: "Big is a big word for me! B-I-G-E; BAG!", person: "Zaniyah", date: "2024-04-11" },
+            { text: "My fingers are hyperventilating… wait no hyperthermeating, what's the word?", person: "Zaniyah", date: "2024-04-12" },
+            { text: "Sex, when done correctly with the right person and consent, is freaking awesome!", person: "Mr. Max", date: "2024-04-13" },
+            { text: "That’s not consent, that’s you being a creepy rapist", person: "Mr. Max", date: "2024-04-14" },
+            { text: "Don’t grab the chesticles, testicles, or anything-ticles", person: "Stephanie", date: "2024-04-15" },
+            { text: "Uncle bob raped me! Uncle bob is lovely, he wouldn’t do that!", person: "Mr. Max", date: "2024-04-16" },
+            { text: "Hey there, would you want your chesticles fondled?", person: "Maria", date: "2024-04-17" },
+            { text: "HEY YOU WANNA DO IT? *does goofy’s laugh*!", person: "Mr. Max", date: "2024-04-18" },
+            { text: "I didn’t know he was going on a humping rampage", person: "Andrew", date: "2024-04-19" },
+            { text: "Its so sticky in here!", person: "Mr. Max", date: "2024-04-20" },
+            { text: "Men trying to find the clitirs", person: "Taima/Temu", date: "2024-04-21" },
+            { text: "Stop doing math, pay attention to Sexually Transmitted Diseases", person: "Mr. Max", date: "2024-04-22" },
+            { text: "“I'M GOING TO EAT YOUR EAR WAX” — Stephanie. “We are going to have some fun with our ears tonight” — Andrew", person: "Stephanie & Andrew", date: "2024-04-23" },
+            { text: "I have a little habit of eating children’s ear wax. I love licking ears as my pastime.", person: "Stephanie", date: "2024-04-24" },
+            { text: "Epididymis sounds so cute! Aww… epididymis! YOU DO NOT WANT EPIDIDYMIS, YOUR PENIS WILL BE ON FIRE", person: "Mr. Max", date: "2024-04-25" },
+            { text: "*temu growls*", person: "Taima/Temu", date: "2024-04-26" },
+            { text: "LET'S HEAR IT FOR CHLAMYDIA!!!!!!!!!!!!", person: "Mr. Max", date: "2024-04-27" },
+            { text: "Have sex, have a lot of sex", person: "Mr. Max", date: "2024-04-28" },
+            { text: "Raffi thinks he has gonorrhea", person: "Mr. Max", date: "2024-04-29" },
+            { text: "“I’m bleeding right now.” “Me too!”", person: "Taima/Temu & Stephanie", date: "2024-04-30" },
+            { text: "I’m gonna give you an STD right now.", person: "Taima/Temu", date: "2024-05-01" },
+            { text: "Hide and go suck my tittes", person: "Taima/Temu", date: "2024-05-02" },
+            { text: "Educator to lovers", person: "Taima/Temu", date: "2024-05-03" },
+            { text: "Special educator to lovers", person: "Taima/Temu", date: "2024-05-04" },
+            { text: "Masochist x Sadist", person: "Taima/Temu & Stephanie", date: "2024-05-05" },
+            { text: "“Hey there, I'd like to cast you in my new ‘movie’...” — Andrew. “THEYRE SHOOTING A PORNO WITH ME” — Stephanie", person: "Andrew & Stephanie", date: "2024-05-06" },
+            { text: "Guys… I think we’re in a threesome", person: "Andrew", date: "2024-05-07" },
+            { text: "“What would you do if your children got raped by Michael Jackson?” — Andrew. “I’d rape them too!” — Stephanie", person: "Andrew & Stephanie", date: "2024-05-08" },
+            { text: "Stephanie was raped by three people, but don't worry I’ll be the next one", person: "Taima/Temu", date: "2024-05-09" },
+            { text: "FIRE PENIS!!", person: "Salma", date: "2024-05-10" },
+            { text: "WHY ARE YOU DREAMING OF SEVENTH GRADE BOYS MAKING OUT", person: "Salma", date: "2024-05-11" },
+            { text: "Grandma wants you to eat her ass out <3", person: "Taima/Temu", date: "2024-05-12" },
+            { text: "I've got a phone and Google Maps", person: "Stephanie", date: "2024-05-13" },
+            { text: "Lemon = Boob", person: "Andrew", date: "2024-05-14" },
+            { text: "I can wonder where my suitcase is", person: "Andrew", date: "2024-05-15" },
+            { text: "Does anyone know anybody they can decapitate over the weekend?", person: "Mr. Probst", date: "2024-05-16" },
+            { text: "I wonder why I got called to the principal's office… oh no… is it because I blew up his car 😨", person: "Mr. Probst", date: "2024-05-17" },
+            { text: "Can you act like a gay man, Raya? Do you know what I mean? Can you do that for me?", person: "Mr. Probst", date: "2024-05-18" },
+            { text: "“You would fuck snorlax?” — Stephanie. “ABSOLUTELY” — Andrew", person: "Stephanie & Andrew", date: "2024-05-19" },
+            { text: "“Please don’t become a skibbity rizzler” — Andrew. “But I am!” — Stephanie", person: "Andrew & Stephanie", date: "2024-05-20" },
+            { text: "Is this anyone’s binder? I’m gonna open it up and see who’s it is. *gasps* IT’S FILLED WITH PORNOGRAPHY!", person: "Mr. Probst", date: "2024-05-21" },
+            { text: "“Hoe hoe hoe bitch you're gay now” ... “Is that what homophobic people think that a gay person is just going to climb down their chimney and turn them gay?”", person: "Andrew & Stephanie", date: "2024-05-22" },
+            { text: "Oh… oh no… this is bad… this is bad (getting corrected on pronouns)", person: "Mr. Probst", date: "2024-05-23" },
+            { text: "Mugshots are hot. My case: DONALD TRUMP", person: "Stephanie", date: "2024-05-24" },
+            { text: "I LOVE LESBIANS", person: "Stephanie", date: "2024-05-25" },
+            { text: "That is certainly a decision and that is certainly a decision that you decided to make", person: "Andrew", date: "2024-05-26" },
+            // 2025
+            { text: "What's the number after 4?", person: "Andrew", date: "2025-01-01" },
+            { text: "This place makes a MEAN fettuccine", person: "Boyfriend Audio", date: "2025-01-02" },
+            { text: "I’m different baby…", person: "Boyfriend Audio", date: "2025-01-03" },
+            { text: "You have a situationship with your mom?", person: "Stephanie", date: "2025-01-04" },
+            { text: "I can't even touch myself", person: "Stephanie", date: "2025-01-05" },
+            { text: "You’re hair! It’s GONE!", person: "Mr. Max", date: "2025-01-06" },
+            { text: "Last I heard Luke was living on the street", person: "Mr. Max", date: "2025-01-07" },
+            { text: "I’ll buy kids from Costco", person: "Mr. Sissakis", date: "2025-01-08" },
+            { text: "Shut the door!", person: "Varonie", date: "2025-01-09" },
+            { text: "I'm the pedophile now", person: "Stephanie", date: "2025-01-10" },
+            { text: "I was God’s third YouTube subscriber, be God’s 67th YouTube subscriber!", person: "Andrew", date: "2025-01-11" },
+            { text: "What's another word for being happy? I'm so gay!", person: "Stephanie", date: "2025-01-12" },
+            { text: "Do you wanna go have a threesome with a bee with me?", person: "Stephanie", date: "2025-01-13" },
+            { text: "This is harassment.", person: "Cyberwolf", date: "2025-01-14" },
+            { text: "You can’t graduate high school without reading gay smut!", person: "Stephanie", date: "2025-01-15" },
+            { text: "Sex sex sex sex sex sex, I’m gonna say sex a lot over the next few weeks", person: "Mr. Sissakis", date: "2025-01-16" },
+            { text: "BALLS. BIG HEAVY METALS BALLS- [starts laughing]", person: "Mr. Sissakis", date: "2025-01-17" },
+            { text: "WHOA… I feel like I’m watching a documentary on like… zebras or something", person: "Stephanie", date: "2025-01-18" },
+            { text: "Rough and wet, like a tampon", person: "Andrew", date: "2025-01-19" },
+            { text: "Can me and my friend have a kid? He’s a guy. YES! As a gay couple-", person: "Mr. Sissakis", date: "2025-01-20" },
+            { text: "Who’s Andrew", person: "Varonie", date: "2025-01-21" },
+            { text: "I’m a man, and this is what men do… help their women build pretty pink houses", person: "Andrew", date: "2025-01-22" },
+            { text: "I’ll turn you off, I’d bet you like that since you’re aroace", person: "Andrew", date: "2025-01-23" },
+            { text: "I like touching kids", person: "Raya", date: "2025-01-24" },
+            { text: "Okay so 12 plus 2, that’s 24", person: "Varonie", date: "2025-01-25" },
+            { text: "I was about to google bigger button maker… but then I remembered… there’s no internet", person: "Andrew", date: "2025-01-26" },
+            { text: "Wow! Six hours plus homework? I’m gonna cum!", person: "Stephanie", date: "2025-01-27" },
+            { text: "You just wanna steal my hot, sexy lesbian bod", person: "Stephanie", date: "2025-01-28" },
+            { text: "Well fuck you, cause I have a DUI", person: "Stephanie", date: "2025-01-29" },
+            { text: "I used to grab onto my dads back and just POUND HIM-", person: "Maxine", date: "2025-01-30" },
+            { text: "Hey Siri, WHAT IS INDUCTION?", person: "Emma", date: "2025-01-31" },
+            { text: "“That’s a SEXY CAT,” — Stephanie. “That’s a homophobic cat,” — Andrew. “EVEN BETTER *seductively licks*” — Stephanie", person: "Stephanie & Andrew", date: "2025-02-01" },
+            { text: "Is that what children like these days? PARTIAL NUDITY??", person: "Stephanie", date: "2025-02-02" },
+            { text: "Your pussy is glowing!", person: "Andrew", date: "2025-02-03" },
+            { text: "I’m hanging up on you, I don’t want your sperm anymore", person: "Stephanie", date: "2025-02-04" },
+            { text: "Don’t conspire with the queer", person: "Raya", date: "2025-02-05" },
+            { text: "I’m like a sexier Donald Trump", person: "Weezer Max", date: "2025-02-06" },
+            { text: "I’ll try my hardest to get you pregnant", person: "Raya", date: "2025-02-07" },
+            { text: "Nobody start any fires, any cults, do any sacrifices, murder, I’ll be right back", person: "Ms. Gray", date: "2025-02-08" },
+            { text: "I did NOT have sexual relations with that tree. I had it with THAT ONE", person: "TikTok Lorax", date: "2025-02-09" },
+            { text: "YOUUU MUST BOUNCE ON ITTTT", person: "Maxine (as Maximum Smut)", date: "2025-02-10" },
+            { text: "My favourite thing to do in the game is pick up hot emo chicks", person: "Emma", date: "2025-02-11" },
+            { text: "“Hey printer, you gonna print real good for Stephanie, right?” — Andrew. “Andrew stop flirting with the printer,” — Stephanie", person: "Andrew & Stephanie", date: "2025-02-12" },
+            { text: "How about you scissor and then I glu-", person: "Andrew", date: "2025-02-13" },
+            { text: "*clasps hands together* CRIME SCENE INVESTIGATION!!!!", person: "Ms. Gray", date: "2025-02-14" },
+            { text: "“Is that the trans flag?” — Emma. “No that’s Harry Styles,” — Raya", person: "Emma & Raya", date: "2025-02-15" },
+            { text: "I’m gonna use Google. ‘Cause it’s easier!", person: "Ms. Gray", date: "2025-02-16" },
+            { text: "I wanna be a mafia boss", person: "Ms. Gray", date: "2025-02-17" },
+            { text: "Savanah antelope? Camel?", person: "Andrew", date: "2025-02-18" },
+            { text: "Oh yeah, chew on that gum flavour", person: "New York Times & Andrew", date: "2025-02-19" },
+            { text: "I am the anti-AI QUEEN !", person: "Ms. Gray", date: "2025-02-20" },
+            { text: "OH MY LORD… I love dollarama <3 It’s like, heavenly!", person: "Stephanie", date: "2025-02-21" },
+            { text: "UFOs are a metaphor for racism", person: "Maxine", date: "2025-02-22" },
+            { text: "If I chug, I can do anything!", person: "Raya", date: "2025-02-23" },
+            { text: "And now… the truth is in danger.", person: "Ms. Gray", date: "2025-02-24" },
+            { text: "I don’t want to be a unicorn, I want to be a pegasus. Pegasuses can FLY. Unicorns are just GLORIFIED LAND HORSES with a protruding bone.", person: "Stephanie", date: "2025-02-25" },
+            { text: "Stickers as a main craft/hobby is dumb", person: "Maxine (from Stephanie’s dream)", date: "2025-02-26" },
+            { text: "I’m lowkey convinced I’m Jesus", person: "Maxine", date: "2025-02-27" },
+            { text: "I wanna go to Atlantis, I wanna go to Atlantis! But you’re the son of god", person: "Maxine", date: "2025-02-28" },
+            { text: "How many Jesus crackers would you need to drown a small child?", person: "Maxine", date: "2025-03-01" },
+            { text: "Talk school appropriate to me.", person: "Weezer Max", date: "2025-03-02" },
+            { text: "They milk me for my emo oil", person: "Weezer Max", date: "2025-03-03" },
+            { text: "“Do you want to come over?” No, I’m a tree", person: "Andrew", date: "2025-03-04" },
+            { text: "“Boi” — Stephanie. “SIGnIoR?” — Raya", person: "Stephanie & Raya", date: "2025-03-05" },
+            { text: "Fill the screen with your body", person: "Isaac Edwards", date: "2025-03-06" },
+            { text: "That sucks. Want gravy?", person: "Maxine", date: "2025-03-07" },
+            { text: "No, deadass Mike, lowkey six seven, lookat my labubu", person: "Andrew (as Will Byers)", date: "2025-03-08" },
+            { text: "You should know this, it’s British? Isn’t it? The New York Times?", person: "Stephanie", date: "2025-03-09" },
+            { text: "Let your plans be so stupid that the enemy has no idea what they’re doing- what you’re doing, then drop a nuke on them", person: "Anson", date: "2025-03-10" },
+            { text: "“We should start a GoFundMe!” — Stephanie. “For New York’s transition?” — Andrew. “No! For MY TRANSITION!” — Stephanie", person: "Stephanie & Andrew", date: "2025-03-11" },
+            { text: "“We should start a protest, because we’re allowed to do that,” — Andrew. “I think women should not be allowed to go to the bathroom during math class,” — Stephanie. “But men can?” — Andrew. “OBVIOUSLY… because men don’t have periods” — Stephanie", person: "Andrew & Stephanie", date: "2025-03-12" },
+            { text: "Patrick Star isn't even hot.", person: "Weezer Max", date: "2025-03-13" },
+            { text: "I just wanted to gobble her up", person: "Mr. McRea", date: "2025-03-14" },
+            { text: "Don’t kink shame the man with the severed arm", person: "Stephanie", date: "2025-03-15" },
+            { text: "“Are we dumb?” — Andrew. “Daddy…” — Stephanie", person: "Andrew & Stephanie", date: "2025-03-16" },
+            { text: "Yeah you can vote for anybody! Then your family disappears. Then your house burns down.", person: "Mr. Magney", date: "2025-03-17" },
+            { text: "I need to express my hatred for Emma’s vagina", person: "Stephanie", date: "2025-03-18" },
+            { text: "Hey… your “D” is UGLY…", person: "Stephanie", date: "2025-03-19" },
+            { text: "And should we let four year olds drive? No….", person: "Mr. Magney", date: "2025-03-20" },
+            { text: "Yu goooo slaviaaa….. Yogurt!", person: "Stephanie", date: "2025-03-21" },
+            { text: "Incest yuri…nice, nice!", person: "Maxine", date: "2025-03-22" },
+            { text: "*snaps* Who fact. GET ME OUT OF THIS HOUSE…. YOU DONT WANT TO KNOW WHAT THEY DO TO ME", person: "Raya", date: "2025-03-23" },
+            { text: "I’d love to go down your pharynx", person: "Raya", date: "2025-03-24" },
+            { text: "Hmmmmm, what sound do orcas make? HMMMMM. Orca A-orca: Aorta!!! I don’t even know what an aorta is!!", person: "Andrew", date: "2025-03-25" },
+            { text: "I’m not scared of them reading my search history, I think they should be scared of reading my search history", person: "Maxine", date: "2025-03-26" },
+            { text: "[at the Canadian border] I’m bringing in this 5,000 pounds of cocaine", person: "Mr. Magney", date: "2025-03-27" },
+            { text: "“I have a bomb,” — Andrew. “Where, in your fat ass?” — Stephanie", person: "Andrew & Stephanie", date: "2025-03-28" },
+            { text: "I slept better last night. Maybe because there’s less… testosterone pollution.", person: "ChatGPT (Love Island Andrew)", date: "2025-03-29" },
+            { text: "There are so many balls.", person: "Stephanie", date: "2025-03-30" },
+            { text: "“Horse with a spotted coat” — New York Times. “Oh, giraffe!” — Andrew", person: "New York Times & Andrew", date: "2025-03-31" },
+            { text: "GROSS! IIIIIICKYYYYY", person: "Stephanie", date: "2025-04-01" },
+            { text: "STOP. I see Jesus", person: "Stephanie", date: "2025-04-02" },
+            { text: "Oh no… you’ve created a Blue‑mingo 😱🦩💙", person: "ChatGPT", date: "2025-04-03" },
+            { text: "Oh we have this really cool new pain killer called fentanyl but its really addictive", person: "Mr. Magney", date: "2025-04-04" },
+            { text: "Magney assaulted the bus driver", person: "Mr. Magney", date: "2025-04-05" },
+            { text: "The neighbours all said I was assaulting her because they hate me", person: "Mr. Magney", date: "2025-04-06" },
+            { text: "Okay so for example, if I’m shoplifting", person: "Mr. Magney", date: "2025-04-07" },
+            { text: "If I’m standing on the subway and I HEADBUT someone… that is assault", person: "Mr. Magney", date: "2025-04-08" },
+            { text: "I have a blender, I got a blender, WOO! I’M GONNA MAKE SMOOTHIES! I wake up in the morning the first thing I do is turn on the blender and BOOM… it blows up", person: "Mr. Magney", date: "2025-04-09" },
+            { text: "You already found Daddy Dairy", person: "New York Times", date: "2025-04-10" },
+            { text: "People in glass closets shouldn’t throw stones, Anson.", person: "Maxine", date: "2025-04-11" },
+            { text: "I’m not giving you my tumblr.", person: "Ms. Gray", date: "2025-04-12" },
+            { text: "Is pea soup circular?", person: "Andrew", date: "2025-04-13" },
+            { text: "Do you want to listen to Christmas Jesus song? I think you dooo!", person: "Andrew", date: "2025-04-14" },
+            { text: "I’m still fascinated by the bread… I love bread…", person: "Mr. Tiberio", date: "2025-04-15" },
+            { text: "I wanna be more that just siblings", person: "Andrew", date: "2025-04-16" },
+            { text: "Let me show you my genius (entering “Hatha” into spelling bee)", person: "Stephanie", date: "2025-04-17" },
+            { text: "...Globey warmiing…", person: "Maxine", date: "2025-04-18" },
+            { text: "I’m playing slither.io right now and the first person on the leaderboard is Osama Bin Laden", person: "Anson", date: "2025-04-19" },
+            { text: "Awwww… you’re so adorable! I wanna lock you in a dog cage.", person: "Maxine", date: "2025-04-20" },
+            { text: "If I’m building a house, do I want to use a hammer that was built with child labour? Or a hammer that was built ethically", person: "Mr. Magney", date: "2025-04-21" },
+            { text: "“Coffee? You guys are drinking COFFEE now?!” — Varonie. “It’s tea haha…” — Andrew. “Oh.. [loud awkward laugh]” — Varonie", person: "Varonie & Andrew", date: "2025-04-22" },
+            { text: "It’s ok I own finland anyways", person: "Stephanie", date: "2025-04-23" },
+            { text: "Why Yes Sweet Dear Sucker Dummy", person: "New York Times", date: "2025-04-24" },
+            { text: "If Y means candy to you then yellow can mean anything…. to you", person: "Stephanie", date: "2025-04-25" },
+            { text: "Be a man and play tic tac toe with me", person: "Raya", date: "2025-04-26" },
+            { text: "I’m gonna start talking you like crossword clues", person: "Andrew", date: "2025-04-27" },
+            { text: "If your father ever swallows you, I’ll come save you", person: "Andrew", date: "2025-04-28" },
+            { text: "Ive always wanted to be a librarian and shush people… SHHHHHHHHHHHHHHH", person: "Mr. Magney", date: "2025-04-29" },
+            { text: "EAR FLAP", person: "Stephanie", date: "2025-04-30" },
+            { text: "Everybody from Vancouver is a white woman, even the men!", person: "Maxine", date: "2025-05-01" },
+            { text: "Celsius goes down", person: "Stephanie", date: "2025-05-02" },
+            { text: "England is basically in Asia", person: "Andrew", date: "2025-05-03" },
+            { text: "I didn’t know what the f slur was until salma started calling me it!", person: "Andrew", date: "2025-05-04" },
+            { text: "“I just realized.. The United States is called that because they are united states….” — Stephanie. “And the United Kingdom….”", person: "Stephanie", date: "2025-05-05" },
+            { text: "Snitches get stitches.", person: "Ms. Lopes", date: "2025-05-06" },
+            { text: "You know how it's illegal to roll past a stop sign? Everyone does it.", person: "Ms. Lopes", date: "2025-05-07" },
+            { text: "I want Charlie’s meat!", person: "Stephanie", date: "2025-05-08" },
+            { text: "“My Chemical Romance! Nice!” — Weezer Max. “No, that’s a baby.” — Maxine", person: "Weezer Max & Maxine", date: "2025-05-09" },
+            { text: "[side eye]...are there any children in Antarctica?", person: "Mr. Magney", date: "2025-05-10" },
+            { text: "If you become a lesbian I’ll become a woman", person: "Andrew", date: "2025-05-11" },
+            { text: "“Which do you choose, death or kisses?” — Raya. “I choose death,” — Waid", person: "Raya & Waid", date: "2025-05-12" },
+            { text: "Jesus was a troubled woman", person: "Maxine", date: "2025-05-13" },
+            { text: "Please stop sexualizing the monarchy, they are all inbred", person: "Maxine", date: "2025-05-14" },
+            
+        ];
+
+        // Process legacy quotes to mark them as Year-Only mode
+        const initialQuotes = rawInitialQuotes.map(q => ({ ...q, isLegacy: true }));
+
+        // 2. STATE MANAGEMENT
+        // We always use the hardcoded list as source of truth for the static site
+        let quotes = JSON.parse(JSON.stringify(initialQuotes)); 
+        // We append any locally saved quotes on top (optional for your own view)
+        const localData = JSON.parse(localStorage.getItem('quotesDB_data'));
+        if(localData && localData.length > 0) {
+            // This is just to allow you to test deletions locally if needed
+            // For a static site, usually you just render the hardcoded list.
+            // But since you asked for Admin delete, we use the local copy if it exists/matches
+            // For simplicity in this file-based deploy, we will prioritize the code list + localStorage edits
+            // If you delete something via admin, it saves to local storage as the "new" list.
+            quotes = localData;
+        }
+
+        // 3. DOM ELEMENTS
+        const quotesList = document.getElementById('quotesList');
+        const filterPerson = document.getElementById('filterPerson');
+        const filterYear = document.getElementById('filterYear'); 
+        const searchInput = document.getElementById('searchInput');
+        const quoteModal = document.getElementById('quoteModal');
+        const captureArea = document.getElementById('captureArea');
+
+        // 4. INITIALIZATION
+        function init() {
+            updateFilters(); 
+            renderQuotes();
+        }
+
+        // 5. HELPER FUNCTIONS
+        function saveData() {
+            localStorage.setItem('quotesDB_data', JSON.stringify(quotes));
+        }
+
+        function getYearFromDate(dateStr) {
+            if(!dateStr) return "????";
+            return dateStr.split('-')[0];
+        }
+
+        function getPrettyDate(dateStr) {
+            if(!dateStr) return "";
+            const dateObj = new Date(dateStr + "T12:00:00");
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return dateObj.toLocaleDateString('en-US', options);
+        }
+        
+        function getBaseName(name) {
+            if (name.includes('(')) {
+                const stripped = name.replace(/ \(.+\)/, '').trim();
+                return stripped;
+            }
+            return name;
+        }
+
+        function isConversation(text) {
+            return text.includes('” — ') && text.includes('. “');
+        }
+
+        function parseConversation(text) {
+            let raw = text;
+            const segments = [];
+            const regex = /([“"].+?[”"])\s*[—\-]\s*([^.]+?)(?:\.\s*|$)/g;
+            let match;
+            
+            while ((match = regex.exec(raw)) !== null) {
+                segments.push({
+                    quote: match[1],
+                    person: match[2].trim()
+                });
+            }
+            
+            if (segments.length === 0) {
+                segments.push({ quote: text, person: '' });
+            }
+            return segments;
+        }
+        
+        function showRandomQuote() {
+            if (quotes.length === 0) return alert("No quotes found!");
+            const randomIndex = Math.floor(Math.random() * quotes.length);
+            openModal(randomIndex);
+        }
+        
+        function deleteQuote(index) {
+            const pwd = prompt("Enter Admin Password to delete:");
+            if (pwd === "admin") {
+                if (confirm("Are you sure? Note: If this is a hardcoded quote, you must also remove it from the code file to delete it for everyone.")) {
+                    // Find the quote in the main array using the passed index
+                    // Note: The index passed is the original index
+                    quotes.splice(index, 1);
+                    saveData();
+                    updateFilters();
+                    renderQuotes();
+                }
+            } else if (pwd !== null) {
+                alert("Incorrect password.");
+            }
+        }
+
+        function updateFilters() {
+            // Update Filter Dropdown
+            const peopleSet = new Set();
+            quotes.forEach(q => {
+                const names = q.person.split(/\s*&\s*|\s+and\s+/);
+                names.forEach(name => {
+                    peopleSet.add(getBaseName(name.trim()));
+                });
+            });
+            const sortedPeople = Array.from(peopleSet).sort();
+            
+            // Update Year Filter
+            const years = new Set(quotes.map(q => getYearFromDate(q.date)));
+            const sortedYears = Array.from(years).sort().reverse();
+
+            filterPerson.innerHTML = `<option value="all">Sort by Quoter (All)</option>` + 
+                                     sortedPeople.map(p => `<option value="${p}">${p}</option>`).join('');
+            
+            filterYear.innerHTML = `<option value="all">Sort by Year (All)</option>` + 
+                                   sortedYears.map(y => `<option value="${y}">${y}</option>`).join('');
+        }
+
+        // 6. MODAL & SCREENSHOT
+        function openModal(quoteId) {
+            const q = quotes[quoteId];
+            const isConvo = isConversation(q.text);
+            const dateDisplay = q.isLegacy ? getYearFromDate(q.date) : getPrettyDate(q.date);
+            
+            let html = '';
+            
+            if (isConvo) {
+                const segments = parseConversation(q.text);
+                html = `<div class="modal-convo-stack">`;
+                segments.forEach(seg => {
+                    html += `
+                        <div class="modal-convo-block">
+                            <div class="modal-convo-text">${seg.quote}</div>
+                            <div class="modal-convo-meta">— ${seg.person}</div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                 html += `<div class="big-quote-meta">${dateDisplay}</div>`;
+            } else {
+                html = `
+                    <div class="modal-quote-layout">
+                        <div class="modal-quote-symbol">“</div>
+                        <div class="modal-quote-text">${q.text}</div>
+                        <div class="modal-quote-symbol">”</div>
+                    </div>
+                    <div class="big-quote-meta">— ${q.person}, ${dateDisplay}</div>
+                `;
+            }
+
+            captureArea.innerHTML = html;
+            quoteModal.style.display = 'flex';
+        }
+
+        function closeModal(e) {
+            if (e.target === quoteModal) quoteModal.style.display = 'none';
+        }
+        
+        function closeModalDirect() {
+            quoteModal.style.display = 'none';
+        }
+
+        function saveAsImage() {
+            html2canvas(captureArea, {
+                scale: 4, 
+                backgroundColor: "#f9f7f1",
+                useCORS: true,
+                onclone: (clonedDoc) => {
+                    const clonedCapture = clonedDoc.getElementById('captureArea');
+                    clonedCapture.style.fontSmooth = 'always';
+                }
+            }).then(canvas => {
+                const link = document.createElement('a');
+                const date = new Date();
+                const timestamp = `${date.getFullYear()}${date.getMonth()+1}${date.getDate()}-${date.getHours()}${date.getMinutes()}${date.getSeconds()}`;
+                link.download = `quote-${timestamp}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        // 7. RENDER LOGIC
+        function renderQuotes() {
+            quotesList.innerHTML = '';
+            
+            const personChoice = filterPerson.value;
+            const yearChoice = filterYear.value;
+            const searchTerm = searchInput.value.toLowerCase();
+
+            // Map quotes to preserve original index for deletion/modal
+            let displayQuotes = quotes.map((q, index) => ({...q, originalIndex: index})).filter(q => {
+                
+                // Search Logic
+                if (searchTerm && !q.text.toLowerCase().includes(searchTerm) && !q.person.toLowerCase().includes(searchTerm)) {
+                    return false;
+                }
+
+                // Name Logic
+                let matchesPerson = false;
+                if (personChoice === 'all') {
+                    matchesPerson = true;
+                } else {
+                    const qNames = q.person.split(/\s*&\s*|\s+and\s+/).map(n => getBaseName(n.trim()));
+                    if (q.person === personChoice) matchesPerson = true;
+                    else if (qNames.includes(personChoice)) matchesPerson = true;
+                }
+                                      
+                const matchesYear = (yearChoice === 'all') || (getYearFromDate(q.date) === yearChoice);
+                return matchesPerson && matchesYear;
+            });
+
+            // Sort (Newest First)
+            displayQuotes.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (displayQuotes.length === 0) {
+                quotesList.innerHTML = '<div class="empty-state">No records found.</div>';
+                return;
+            }
+
+            displayQuotes.forEach(q => {
+                const card = document.createElement('div');
+                card.className = 'quote-card';
+                card.setAttribute('onclick', `openModal(${q.originalIndex})`);
+
+                // DELETE BUTTON (Hidden unless hovered)
+                const delBtn = document.createElement('button');
+                delBtn.innerHTML = '×';
+                delBtn.className = 'delete-btn';
+                delBtn.title = "Admin Delete";
+                delBtn.onclick = (e) => {
+                    e.stopPropagation(); 
+                    deleteQuote(q.originalIndex);
+                };
+                card.appendChild(delBtn);
+
+                const isConvo = isConversation(q.text);
+                
+                if (isConvo) {
+                    // CONVERSATION LAYOUT
+                    const segments = parseConversation(q.text);
+                    let stackHTML = `<div class="conversation-stack">`;
+                    segments.forEach(seg => {
+                        stackHTML += `
+                            <div class="convo-block">
+                                <span class="convo-text">${seg.quote}</span>
+                                <span class="convo-meta">— ${seg.person}</span>
+                            </div>
+                        `;
+                    });
+                    stackHTML += `</div>`;
+                    stackHTML += `<div class="quote-meta">${getYearFromDate(q.date)}</div>`;
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.innerHTML = stackHTML;
+                    card.appendChild(contentDiv);
+
+                } else {
+                    // STANDARD LAYOUT
+                    const contentDiv = document.createElement('div');
+                    contentDiv.innerHTML = `
+                        <div class="quote-layout">
+                            <div class="quote-symbol">“</div>
+                            <div class="quote-text-body">${q.text}</div>
+                            <div class="quote-symbol">”</div>
+                        </div>
+                        <div class="quote-meta">— ${q.person}, ${getYearFromDate(q.date)}</div>
+                    `;
+                    card.appendChild(contentDiv);
+                }
+                
+                quotesList.appendChild(card);
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
